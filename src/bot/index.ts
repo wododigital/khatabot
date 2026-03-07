@@ -115,7 +115,7 @@ export async function startBot(): Promise<void> {
         // Clear QR code and mark as connected
         try {
           const db = createServerClient() as any;
-          const sessionId = process.env.BOT_SESSION_ID || 'khatabot-primary';
+          const sid = process.env.BOT_SESSION_ID || 'khatabot-primary';
 
           await db
             .from('bot_sessions')
@@ -124,13 +124,37 @@ export async function startBot(): Promise<void> {
               qr_pending: false,
               updated_at: new Date().toISOString(),
             })
-            .eq('session_id', sessionId);
+            .eq('session_id', sid);
 
-          logger.info({ sessionId }, 'QR cleared, bot marked as connected');
+          logger.info({ sessionId: sid }, 'QR cleared, bot marked as connected');
         } catch (clearError) {
           const err =
             clearError instanceof Error ? clearError.message : String(clearError);
           logger.warn({ error: err }, 'Failed to clear QR code');
+        }
+
+        // Auto-discover WhatsApp groups and upsert into DB
+        try {
+          if (socket) {
+            const groups = await socket.groupFetchAllParticipating();
+            const { upsertGroupServer } = await import('@/lib/supabase/queries.js');
+            let discovered = 0;
+            for (const [jid, meta] of Object.entries(groups)) {
+              try {
+                await upsertGroupServer({
+                  wa_group_jid: jid,
+                  name: meta.subject || jid,
+                });
+                discovered++;
+              } catch (e) {
+                logger.debug({ jid, error: String(e) }, 'Failed to upsert group');
+              }
+            }
+            logger.info({ discovered, total: Object.keys(groups).length }, 'WhatsApp groups discovered and saved to DB');
+          }
+        } catch (discoverError) {
+          const err = discoverError instanceof Error ? discoverError.message : String(discoverError);
+          logger.warn({ error: err }, 'Failed to discover WhatsApp groups');
         }
       } else if (connection === 'close') {
         // Check if disconnect was expected or due to auth error

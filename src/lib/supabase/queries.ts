@@ -287,6 +287,148 @@ export async function getFuzzyContactMatches(
 }
 
 // ============================================================
+// GROUP MUTATIONS
+// ============================================================
+
+export async function insertGroup(data: {
+  wa_group_jid: string;
+  name: string;
+  category: 'home' | 'personal' | 'company' | 'custom';
+  is_active?: boolean;
+}): Promise<Group> {
+  const supabase = createBrowserClient();
+  const { data: inserted, error } = await supabase
+    .from('groups')
+    .insert(data as any)
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to insert group: ${error.message}`);
+  return inserted as Group;
+}
+
+export async function upsertGroup(data: {
+  wa_group_jid: string;
+  name: string;
+  category?: 'home' | 'personal' | 'company' | 'custom';
+  is_active?: boolean;
+}): Promise<Group> {
+  const supabase = createBrowserClient();
+  const { data: upserted, error } = await supabase
+    .from('groups')
+    .upsert(data as any, { onConflict: 'wa_group_jid' })
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to upsert group: ${error.message}`);
+  return upserted as Group;
+}
+
+export async function updateGroup(
+  id: string,
+  data: Partial<{ name: string; category: string; is_active: boolean }>
+): Promise<Group> {
+  const supabase = createBrowserClient();
+  const { data: updated, error } = await (supabase as any)
+    .from('groups')
+    .update(data)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to update group: ${error.message}`);
+  return updated as Group;
+}
+
+export async function deleteGroup(id: string): Promise<void> {
+  const supabase = createBrowserClient();
+  const { error } = await supabase.from('groups').delete().eq('id', id);
+  if (error) throw new Error(`Failed to delete group: ${error.message}`);
+}
+
+// ============================================================
+// CONTACT MUTATIONS
+// ============================================================
+
+export async function insertContact(data: {
+  name: string;
+  aliases?: string[];
+  phone?: string | null;
+  role?: string | null;
+  notes?: string | null;
+}): Promise<Contact> {
+  const supabase = createBrowserClient();
+  const { data: inserted, error } = await supabase
+    .from('contacts')
+    .insert(data as any)
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to insert contact: ${error.message}`);
+  return inserted as Contact;
+}
+
+export async function updateContact(
+  id: string,
+  data: Partial<{
+    name: string;
+    aliases: string[];
+    phone: string | null;
+    role: string | null;
+    notes: string | null;
+  }>
+): Promise<Contact> {
+  const supabase = createBrowserClient();
+  const { data: updated, error } = await (supabase as any)
+    .from('contacts')
+    .update(data)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to update contact: ${error.message}`);
+  return updated as Contact;
+}
+
+export async function deleteContact(id: string): Promise<void> {
+  const supabase = createBrowserClient();
+  const { error } = await supabase.from('contacts').delete().eq('id', id);
+  if (error) throw new Error(`Failed to delete contact: ${error.message}`);
+}
+
+export async function getContactById(id: string): Promise<Contact | null> {
+  const supabase = createBrowserClient();
+  const { data, error } = await supabase
+    .from('contacts')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) {
+    if (error.code === 'PGRST116') return null;
+    throw new Error(`Failed to fetch contact: ${error.message}`);
+  }
+  return data as Contact;
+}
+
+// ============================================================
+// SERVER-SIDE GROUP MUTATIONS (for bot use)
+// ============================================================
+
+export async function upsertGroupServer(data: {
+  wa_group_jid: string;
+  name: string;
+  category?: string;
+  is_active?: boolean;
+}): Promise<Group> {
+  const supabase = createServerClient();
+  const { data: upserted, error } = await supabase
+    .from('groups')
+    .upsert(
+      { category: 'custom', is_active: false, ...data } as any,
+      { onConflict: 'wa_group_jid' }
+    )
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to upsert group (server): ${error.message}`);
+  return upserted as Group;
+}
+
+// ============================================================
 // BOT SESSION QUERIES
 // ============================================================
 

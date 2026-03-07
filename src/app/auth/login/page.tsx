@@ -72,6 +72,7 @@ export default function LoginPage() {
       }
 
       if (data?.session?.user) {
+        router.refresh();
         router.push('/');
       }
     } catch (err) {
