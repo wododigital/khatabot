@@ -34,8 +34,9 @@ export async function middleware(req: NextRequest) {
 
     const { data: { session } } = await supabase.auth.getSession();
 
-    // Protect API routes
-    if (req.nextUrl.pathname.startsWith('/api/')) {
+    // Protect API routes (except public ones)
+    const publicApiPaths = ['/api/health', '/api/bot-status', '/api/qr'];
+    if (req.nextUrl.pathname.startsWith('/api/') && !publicApiPaths.includes(req.nextUrl.pathname)) {
       if (!session) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
