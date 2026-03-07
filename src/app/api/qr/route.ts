@@ -4,6 +4,8 @@
  * Returns PNG image or JSON status message
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createServerClient } from '@/lib/supabase/server';
 
 export async function GET(): Promise<Response> {
@@ -13,7 +15,7 @@ export async function GET(): Promise<Response> {
 
     const { data: session, error } = await db
       .from('bot_sessions')
-      .select('qr_code_png, qr_pending')
+      .select('qr_code_png, qr_pending, creds')
       .eq('session_id', sessionId)
       .single();
 
@@ -48,8 +50,16 @@ export async function GET(): Promise<Response> {
       );
     }
 
+    const registered = session?.creds?.registered === true;
+    if (registered) {
+      return Response.json(
+        { status: 'connected', message: 'Bot is already connected, QR code not needed' },
+        { status: 200 }
+      );
+    }
+
     return Response.json(
-      { status: 'connected', message: 'Bot is already connected, QR code not needed' },
+      { status: 'disconnected', message: 'Bot is not connected. Start the bot process to generate a QR code.' },
       { status: 200 }
     );
   } catch (error) {

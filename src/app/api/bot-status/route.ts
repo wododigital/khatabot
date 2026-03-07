@@ -3,6 +3,8 @@
  * Returns bot connection state, uptime, and message processing stats
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createServerClient } from '@/lib/supabase/server';
 
 export interface BotStatusResponse {
@@ -23,7 +25,7 @@ export async function GET(): Promise<Response> {
 
     const { data: session, error } = await db
       .from('bot_sessions')
-      .select('created_at, updated_at, last_message_at, messages_processed, qr_pending')
+      .select('created_at, updated_at, last_message_at, messages_processed, qr_pending, creds')
       .eq('session_id', sessionId)
       .single();
 
@@ -43,14 +45,9 @@ export async function GET(): Promise<Response> {
     }
 
     const uptimeSeconds = Math.floor((Date.now() - new Date(session.created_at).getTime()) / 1000);
-
-    const lastMessageTime = session.last_message_at
-      ? new Date(session.last_message_at).getTime()
-      : null;
-    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-    const recentActivity = lastMessageTime !== null && lastMessageTime > fiveMinutesAgo;
     const qrPending = session.qr_pending === true;
-    const connected = recentActivity && !qrPending;
+    const registered = session.creds?.registered === true;
+    const connected = registered && !qrPending;
 
     return Response.json(
       {

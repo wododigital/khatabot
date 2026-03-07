@@ -23,7 +23,7 @@ export default function DashboardPage() {
       try {
         const [data, statusRes] = await Promise.all([
           getTransactions({}),
-          fetch('/api/bot-status').then((r) => r.json()).catch(() => null),
+          fetch('/api/bot-status', { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
         ]);
         if (Array.isArray(data)) setTransactions(data);
         if (statusRes) setBotStatus(statusRes);

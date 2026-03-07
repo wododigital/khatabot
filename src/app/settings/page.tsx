@@ -23,7 +23,7 @@ export default function SettingsPage() {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/bot-status');
+      const res = await fetch('/api/bot-status', { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to fetch bot status');
       const data: BotStatus = await res.json();
       setStatus(data);
@@ -45,7 +45,7 @@ export default function SettingsPage() {
   const fetchQR = async () => {
     setQrLoading(true);
     try {
-      const res = await fetch('/api/qr');
+      const res = await fetch('/api/qr', { cache: 'no-store' });
       if (res.headers.get('Content-Type')?.includes('image/png')) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
