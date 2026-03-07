@@ -1,0 +1,125 @@
+=============================================================================
+PHASE 3 IMPLEMENTATION SUMMARY - KhataBot Baileys Bot Core
+=============================================================================
+
+COMPLETED IMPLEMENTATION:
+✓ src/bot/session-store.ts - Supabase auth state persistence
+✓ src/bot/index.ts - Baileys socket initialization & lifecycle
+✓ src/bot/listener.ts - Message event handler & routing
+✓ src/bot/media.ts - Enhanced media download (images, video, documents)
+✓ scripts/start-bot.ts - Process entry point with graceful shutdown
+✓ src/services/message-router.ts - Route messages to services
+✓ src/services/ai-parser.ts - Updated interface for groupId param
+✓ src/services/transaction-saver.ts - Import path fixes
+
+BUILD STATUS:
+✓ TypeScript compiles cleanly (tsconfig.bot.json)
+✓ ESM modules with .js extensions
+✓ Service role key usage (secure)
+✓ Pino structured logging throughout
+
+KEY FEATURES IMPLEMENTED:
+
+1. SESSION PERSISTENCE (session-store.ts)
+   - Load/save Baileys auth state from Supabase bot_sessions table
+   - Auto-save on credential updates
+   - Survive restarts without QR re-scan
+   - Graceful session creation on first run
+
+2. BOT INITIALIZATION (index.ts)
+   - Create Baileys makeWASocket with Supabase auth state
+   - QR code generation (ASCII terminal output)
+   - Connection lifecycle management (connecting → open → close)
+   - Auto-reconnect with 5-second delay on disconnect
+   - Graceful shutdown handler (SIGTERM/SIGINT)
+
+3. MESSAGE LISTENING (listener.ts)
+   - Filter: Skip own messages, non-group messages
+   - Register: messages.upsert event on Baileys socket
+   - Classify: Text/Image/Document/Irrelevant
+   - Validate: Check group is registered (is_active=true)
+   - Process: Only "notify" events (skip history sync)
+   - Route: Build ClassifiedMessage and call routeMessage()
+
+4. MEDIA DOWNLOAD (media.ts)
+   - Handle images, videos, documents
+   - Decrypt via Baileys downloadMediaMessage()
+   - MIME type detection
+   - File size validation (max 10MB)
+   - Return: buffer + mimeType + filename
+   - Error handling: return null on failure
+
+5. PROCESS MANAGEMENT (start-bot.ts)
+   - Dynamic import to avoid loading in Next.js builds
+   - Health check loop (60-second interval)
+   - Graceful shutdown (clear interval, await shutdownBot())
+   - Uncaught exception handler
+   - Unhandled rejection handler
+   - Structured logging
+
+ENVIRONMENT SETUP:
+Required env vars in .env:
+  NEXT_PUBLIC_SUPABASE_URL
+  SUPABASE_SERVICE_ROLE_KEY
+  BOT_SESSION_ID (default: khatabot-primary)
+  LOG_LEVEL (default: info)
+  ANTHROPIC_API_KEY (for Phase 3b)
+
+TESTING COMMANDS:
+  npm run bot:dev    # Development with auto-reload (tsx watch)
+  npm run bot:start  # Production single run
+  npm run type-check # TypeScript validation
+
+EXPECTED BEHAVIOR:
+1. Bot starts, loads session from Supabase
+2. If new session: generates QR code, displays in terminal
+3. User scans QR with WhatsApp
+4. Bot connects and logs "Bot ready to receive messages"
+5. Bot listens for incoming group messages
+6. For each message:
+   - Check if group is registered
+   - Classify message type
+   - Download media if needed
+   - Route to ai-parser (Phase 3b)
+7. On shutdown (SIGTERM): gracefully close socket and exit
+
+ARCHITECTURE:
+  WhatsApp ← Baileys multidevice ← Supabase (auth state)
+     ↓
+  messages.upsert event
+     ↓
+  setupMessageListener (only notify type)
+     ↓
+  handleMessageEvent:
+    - Filter (own msg? group? registered?)
+    - Classify (text/image/doc)
+    - Download media if needed
+    - Build ClassifiedMessage
+    - routeMessage(msg, groupId)
+       ↓
+    - parseMessage → ai-parser (Phase 3b stub)
+    - enrichedExtraction → saveTransaction (Phase 4)
+    - attachments → storage (Phase 4)
+    - visible on dashboard (Phase 5)
+
+PHASE READINESS:
+✓ Phase 3: Bot Core (100% complete)
+→ Phase 3b: Claude Integration (stubs ready for Phase 3b)
+→ Phase 4: Image Storage (service imports ready for Phase 4)
+→ Phase 5: Dashboard (uses transaction tables)
+→ Phase 6: Polish (dedup, matching, QR endpoint)
+
+SECURITY:
+✓ Uses SUPABASE_SERVICE_ROLE_KEY (never anon key)
+✓ No secrets in code (all from .env)
+✓ Structured error handling (no stack traces exposed)
+✓ Media size validation (prevents memory exhaustion)
+
+DEPLOYMENT READY:
+✓ Railway: npm run bot:start entry point
+✓ SIGTERM handler for graceful shutdown
+✓ Health monitoring (logs every 60s)
+✓ Error recovery (reconnect on disconnect)
+✓ Production logging (structured JSON via Pino)
+
+=============================================================================
