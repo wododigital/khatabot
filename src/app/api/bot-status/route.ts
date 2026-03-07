@@ -39,7 +39,8 @@ export async function GET(): Promise<Response> {
           uptimeSeconds: 0,
           qrPending: false,
           timestamp: new Date().toISOString(),
-        } as BotStatusResponse,
+          _debug: error ? `query_error: ${error.message} (${error.code})` : 'no_session',
+        },
         { status: 200 }
       );
     }
@@ -65,7 +66,8 @@ export async function GET(): Promise<Response> {
       }
     );
   } catch (error) {
-    console.error('Bot status endpoint error:', error);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('Bot status endpoint error:', errMsg);
     return Response.json(
       {
         connected: false,
@@ -75,8 +77,9 @@ export async function GET(): Promise<Response> {
         uptimeSeconds: 0,
         qrPending: false,
         timestamp: new Date().toISOString(),
-      } as BotStatusResponse,
-      { status: 500 }
+        _debug: errMsg,
+      },
+      { status: 200 }
     );
   }
 }
