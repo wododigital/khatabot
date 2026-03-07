@@ -66,7 +66,7 @@ export default function TransactionDetailPage(): React.ReactElement {
     if (!transaction) return;
     try {
       setSaving(true);
-      await updateTransaction(client, transaction.id, {
+      await updateTransaction(transaction.id, {
         amount: formData.amount,
         person_name: formData.person_name,
         category: formData.category,
@@ -76,7 +76,7 @@ export default function TransactionDetailPage(): React.ReactElement {
         notes: formData.notes || null,
       });
       setEditing(false);
-      const updatedData = await getTransactionById(client, id);
+      const updatedData = await getTransactionById(id);
       if (updatedData) {
         setTransaction(updatedData);
       }
@@ -91,7 +91,7 @@ export default function TransactionDetailPage(): React.ReactElement {
     if (!transaction || !confirm('Delete this transaction?')) return;
     try {
       setSaving(true);
-      await updateTransaction(client, transaction.id, { is_deleted: true });
+      await updateTransaction(transaction.id, { is_deleted: true });
       router.push('/transactions');
     } catch (error) {
       console.error('Failed to delete transaction:', error);
