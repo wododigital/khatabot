@@ -1,3 +1,5 @@
+import { AuthProvider } from '@/contexts/auth-context';
+
 export const metadata = {
   title: 'KhataBot - WhatsApp Expense Tracker',
   description: 'Track expenses via WhatsApp with Claude AI extraction',
@@ -10,7 +12,9 @@ export default function RootLayout({
 }): React.ReactElement {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }
