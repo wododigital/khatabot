@@ -14,7 +14,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({
   children,
   title = 'Dashboard',
-}: DashboardLayoutProps): React.ReactElement {
+}: DashboardLayoutProps): React.ReactElement | null {
   const { user, loading } = useAuth();
   const router = useRouter();
 
