@@ -36,3 +36,4 @@ pino-logs/
 tmp/
 temp/
 *.tmp
+*.tsbuildinfo

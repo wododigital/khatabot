@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+*.tsbuildinfo
+baileys_auth_info
+baileys_auth
+.env
+.env.*
+coverage
+logs
+*.log
+.DS_Store
