@@ -7,8 +7,8 @@ import { useRouter } from 'next/navigation';
 
 /**
  * Signup redirect page
- * Redirects to login since user registration is disabled
- * Users must be created via Supabase admin panel or API
+ * User registration is handled via Supabase admin panel or API
+ * Users must be created manually by admin
  */
 export default function SignUpPage() {
   const router = useRouter();

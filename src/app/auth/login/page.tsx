@@ -8,10 +8,9 @@ import { createClient } from '@supabase/supabase-js';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [supabase] = useState(() =>
@@ -21,18 +20,10 @@ export default function LoginPage() {
     )
   );
 
-  // Check if user is already logged in and show success message
+  // Check if user is already logged in
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check for signup success from URL
-        if (typeof window !== 'undefined') {
-          const params = new URLSearchParams(window.location.search);
-          if (params.get('signup') === 'success') {
-            setSuccess('Account created successfully! Please log in with your credentials.');
-          }
-        }
-
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -50,17 +41,16 @@ export default function LoginPage() {
   }, [supabase, router]);
 
   const validateInputs = (): boolean => {
-    if (!phone.trim()) {
-      setError('Phone number is required');
+    if (!email.trim()) {
+      setError('Email is required');
       return false;
     }
     if (!password) {
       setError('Password is required');
       return false;
     }
-    const digitsOnly = phone.replace(/\D/g, '');
-    if (digitsOnly.length !== 10) {
-      setError('Phone number must be 10 digits');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Please enter a valid email address');
       return false;
     }
     return true;
@@ -77,30 +67,18 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Generate internal email from phone number
-      // User enters phone, we convert to generated email for Supabase
-      const digitsOnly = phone.replace(/\D/g, '');
-      const generatedEmail = `phone+${digitsOnly}@khatabot.app`;
-
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: generatedEmail,
+        email: email.toLowerCase(),
         password,
       });
 
       if (authError) {
         console.error('Auth error:', authError);
-        if (authError.message.includes('Invalid login credentials')) {
-          setError('Invalid phone number or password');
-        } else if (authError.message.includes('Email not confirmed')) {
-          setError('Please confirm your email first');
-        } else {
-          setError(authError.message || 'Login failed');
-        }
+        setError('Invalid email or password');
         return;
       }
 
       if (data?.session?.user) {
-        // Redirect to dashboard
         router.push('/');
       }
     } catch (err) {
@@ -131,17 +109,16 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Phone Input */}
+            {/* Email Input */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Phone Number
+                Email
               </label>
               <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="10-digit phone number"
-                maxLength={14}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
                 disabled={loading}
                 className="w-full px-4 py-2 rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
@@ -156,18 +133,11 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
+                placeholder="Enter your password"
                 disabled={loading}
                 className="w-full px-4 py-2 rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
-
-            {/* Success Message */}
-            {success && (
-              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/50 text-green-400 text-sm animate-in fade-in">
-                {success}
-              </div>
-            )}
 
             {/* Error Message */}
             {error && (
@@ -192,7 +162,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
         </div>
       </div>
     </div>
