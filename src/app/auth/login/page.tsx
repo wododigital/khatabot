@@ -77,12 +77,13 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Format phone number for Supabase as +91XXXXXXXXXX
+      // Generate internal email from phone number
+      // User enters phone, we convert to generated email for Supabase
       const digitsOnly = phone.replace(/\D/g, '');
-      const phoneWithCountry = '+91' + digitsOnly;
+      const generatedEmail = `phone+${digitsOnly}@khatabot.app`;
 
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: phoneWithCountry,
+        email: generatedEmail,
         password,
       });
 
