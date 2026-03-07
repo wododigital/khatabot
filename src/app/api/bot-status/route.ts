@@ -39,8 +39,7 @@ export async function GET(): Promise<Response> {
           uptimeSeconds: 0,
           qrPending: false,
           timestamp: new Date().toISOString(),
-          _debug: error ? `query_error: ${error.message} (${error.code})` : 'no_session',
-        },
+        } as BotStatusResponse,
         { status: 200 }
       );
     }
@@ -77,9 +76,8 @@ export async function GET(): Promise<Response> {
         uptimeSeconds: 0,
         qrPending: false,
         timestamp: new Date().toISOString(),
-        _debug: errMsg,
-      },
-      { status: 200 }
+      } as BotStatusResponse,
+      { status: 500 }
     );
   }
 }
