@@ -10,12 +10,6 @@ const nextConfig = {
       },
     ],
   },
-  serverComponentsExternalPackages: [
-    '@whiskeysockets/baileys',
-    'sharp',
-    'pino',
-    'pino-pretty',
-  ],
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals.push(
@@ -25,6 +19,7 @@ const nextConfig = {
         'pino-pretty'
       );
     }
+    config.module.unknownContextCritical = false;
     return config;
   },
 };

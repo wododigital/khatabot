@@ -38,7 +38,7 @@ export default function TransactionDetailPage(): React.ReactElement {
     const loadTransaction = async () => {
       try {
         setLoading(true);
-        const data = await getTransactionById(client, id);
+        const data = await getTransactionById(id);
         if (data) {
           setTransaction(data);
           setFormData({
