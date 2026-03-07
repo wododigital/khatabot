@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 
 export default function LoginPage() {
@@ -193,15 +192,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Sign Up Link */}
-          <div className="text-center">
-            <p className="text-slate-400">
-              Don't have an account?{' '}
-              <Link href="/auth/signup" className="text-emerald-400 hover:text-emerald-300 transition-colors">
-                Sign up
-              </Link>
-            </p>
-          </div>
         </div>
       </div>
     </div>
