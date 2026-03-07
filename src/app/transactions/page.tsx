@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useState, useEffect } from 'react';
 import { getTransactions } from '@/lib/supabase/queries';
@@ -12,6 +10,7 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
 
   useEffect(() => {
     const loadTransactions = async () => {
@@ -62,7 +61,7 @@ export default function TransactionsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700/50">
-                  {transactions.map((txn) => (
+                  {transactions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((txn) => (
                     <tr key={txn.id} className="hover:bg-slate-800/30 transition-colors">
                       <td className="px-6 py-4 text-sm text-slate-300">
                         {new Date(txn.txn_date || txn.created_at).toLocaleDateString('en-IN')}
@@ -108,7 +107,7 @@ export default function TransactionsPage() {
             <span className="text-slate-400">Page {page}</span>
             <button
               onClick={() => setPage(p => p + 1)}
-              disabled={transactions.length < 50}
+              disabled={page * PAGE_SIZE >= transactions.length}
               className="px-4 py-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 disabled:opacity-50 text-slate-300"
             >
               Next

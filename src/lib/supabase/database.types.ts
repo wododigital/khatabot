@@ -153,6 +153,11 @@ export interface Tables {
       session_id: string;
       creds: Record<string, unknown>;
       keys: Record<string, unknown>;
+      qr_code_png: string | null;
+      qr_pending: boolean;
+      last_message_at: string | null;
+      messages_processed: number;
+      uptime_seconds: number;
       created_at: string;
       updated_at: string;
     };
@@ -161,6 +166,11 @@ export interface Tables {
       session_id: string;
       creds: Record<string, unknown>;
       keys: Record<string, unknown>;
+      qr_code_png?: string | null;
+      qr_pending?: boolean;
+      last_message_at?: string | null;
+      messages_processed?: number;
+      uptime_seconds?: number;
       created_at?: string;
       updated_at?: string;
     };
@@ -169,6 +179,11 @@ export interface Tables {
       session_id?: string;
       creds?: Record<string, unknown>;
       keys?: Record<string, unknown>;
+      qr_code_png?: string | null;
+      qr_pending?: boolean;
+      last_message_at?: string | null;
+      messages_processed?: number;
+      uptime_seconds?: number;
       created_at?: string;
       updated_at?: string;
     };

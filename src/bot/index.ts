@@ -21,7 +21,7 @@ const logger = pino({
 
 let socket: ReturnType<typeof makeWASocket> | null = null;
 let isShuttingDown = false;
-let sessionStartTime = Date.now();
+// Session start time tracked via DB created_at
 
 /**
  * Initialize Baileys WhatsApp socket
@@ -29,6 +29,14 @@ let sessionStartTime = Date.now();
  */
 export async function startBot(): Promise<void> {
   try {
+    // Clean up previous socket listeners on reconnect
+    if (socket) {
+      socket.ev.removeAllListeners('connection.update');
+      socket.ev.removeAllListeners('creds.update');
+      socket.ev.removeAllListeners('messages.upsert');
+      try { socket.ws?.close(); } catch {}
+    }
+
     const sessionId = process.env.BOT_SESSION_ID || 'khatabot-primary';
 
     logger.info({ sessionId }, 'Starting WhatsApp bot...');
@@ -64,7 +72,7 @@ export async function startBot(): Promise<void> {
           try {
             const pngBuffer = await qrcode.toBuffer(qr, {
               errorCorrectionLevel: 'H',
-              type: 'image/png',
+              type: 'png',
               width: 300,
               margin: 1,
               color: {
@@ -75,8 +83,6 @@ export async function startBot(): Promise<void> {
 
             // Save to bot_sessions
             const db = createServerClient() as any;
-            const sessionId = process.env.BOT_SESSION_ID || 'khatabot-primary';
-            const base64Png = pngBuffer.toString('base64');
 
             await db
               .from('bot_sessions')

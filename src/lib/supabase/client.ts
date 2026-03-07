@@ -1,6 +1,7 @@
 import { createBrowserClient as createSupabaseBrowserClient } from '@supabase/ssr';
+import type { Database } from './database.types';
 
-let browserClient: ReturnType<typeof createSupabaseBrowserClient> | null = null;
+let browserClient: ReturnType<typeof createSupabaseBrowserClient<Database>> | null = null;
 
 /**
  * Creates or returns singleton browser client
@@ -22,7 +23,7 @@ export function createBrowserClient() {
     );
   }
 
-  browserClient = createSupabaseBrowserClient(supabaseUrl, supabaseAnonKey);
+  browserClient = createSupabaseBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
   return browserClient;
 }
 

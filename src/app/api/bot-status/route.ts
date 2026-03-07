@@ -7,13 +7,11 @@
 import { createServerClient } from '@/lib/supabase/server';
 import pino from 'pino';
 
-const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  transport: {
-    target: 'pino-pretty',
-    options: { colorize: true, singleLine: false },
-  },
-});
+const logger = pino(
+  process.env.NODE_ENV === 'development'
+    ? { level: process.env.LOG_LEVEL || 'info', transport: { target: 'pino-pretty' } }
+    : { level: process.env.LOG_LEVEL || 'info' }
+);
 
 export interface BotStatusResponse {
   connected: boolean;

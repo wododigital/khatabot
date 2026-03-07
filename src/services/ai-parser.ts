@@ -23,13 +23,13 @@ export async function parseMessage(
   classifiedMessage: ClassifiedMessage
 ): Promise<EnrichedExtraction | null> {
   try {
-    let result: ClaudeExtractionResult;
+    let result: ClaudeExtractionResult | undefined;
 
     if (classifiedMessage.message_type === 'text' && classifiedMessage.text_content) {
       logger.debug({ type: 'text' }, 'Parsing text');
       result = await queue.add(() =>
         extractTransactionFromText(classifiedMessage.text_content!)
-      );
+      ) ?? undefined;
     } else if (
       classifiedMessage.message_type === 'image' &&
       classifiedMessage.image_buffer
@@ -41,9 +41,14 @@ export async function parseMessage(
           classifiedMessage.image_mime || 'image/jpeg',
           classifiedMessage.text_content
         )
-      );
+      ) ?? undefined;
     } else {
       logger.warn({ type: classifiedMessage.message_type }, 'Cannot parse');
+      return null;
+    }
+
+    if (!result) {
+      logger.warn('Queue returned no result');
       return null;
     }
 

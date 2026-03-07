@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useEffect, useState } from 'react';
 import { getTransactions } from '@/lib/supabase/queries';

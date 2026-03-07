@@ -61,10 +61,10 @@ export async function checkDuplicate(
     }
 
     // Check 2: UPI transaction ID (txn_id)
-    // Only applicable to UPI payments with explicit transaction IDs
-    // Skip if txn_id not available or message doesn't hint at UPI
+    // Future: extract txn_id from AI result and check here
 
     // Check 3: Time + amount + person window (5 minutes)
+    // Uses timestamp in ms; compare against created_at as closest proxy
     if (amount && personName) {
       const windowStart = new Date(classifiedMessage.timestamp - 5 * 60 * 1000);
       const windowEnd = new Date(classifiedMessage.timestamp + 5 * 60 * 1000);

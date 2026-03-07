@@ -153,10 +153,14 @@ export async function handleMessageEvent(
     );
 
     // Build classified message
-    const timestamp = event.messageTimestamp
+    // Baileys messageTimestamp is in seconds; normalize to milliseconds
+    const rawTs = event.messageTimestamp
       ? typeof event.messageTimestamp === 'number'
         ? event.messageTimestamp
         : Number(event.messageTimestamp)
+      : 0;
+    const timestamp = rawTs > 0
+      ? (rawTs < 1e12 ? rawTs * 1000 : rawTs) // seconds -> ms if needed
       : Date.now();
 
     const classifiedMessage: ClassifiedMessage = {

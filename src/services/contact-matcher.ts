@@ -82,13 +82,11 @@ function calculateSimilarity(a: string, b: string): number {
     return 1.0;
   }
 
-  // Use fast-fuzzy search to find match score
-  // search() returns array of matches with score property (0-100)
-  // We normalize to 0-1 range
-  const results = search(aLower, [bLower]);
+  // Use fast-fuzzy search with returnMatchData to get scores (0-1 range)
+  const results = search(aLower, [bLower], { returnMatchData: true });
   if (results.length > 0) {
-    const score = results[0].score || 0;
-    return Math.max(0, Math.min(1, score / 100));
+    const score = results[0].score ?? 0;
+    return Math.max(0, Math.min(1, score));
   }
 
   return 0;

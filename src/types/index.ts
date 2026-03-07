@@ -84,7 +84,7 @@ export interface UserProfile {
 // AI EXTRACTION TYPES (Claude API integration)
 // ============================================================
 
-export interface ClaudeExtractionResult {
+export interface ParsedTransaction {
   transaction: {
     amount: number;
     person_name: string;
@@ -100,7 +100,7 @@ export interface ClaudeExtractionResult {
   validation_notes?: string[];
 }
 
-export interface EnrichedExtraction extends ClaudeExtractionResult {
+export interface EnrichedExtraction extends ParsedTransaction {
   matched_contact?: Contact;
   matched_group?: Group;
   matched_contact_confidence?: number;

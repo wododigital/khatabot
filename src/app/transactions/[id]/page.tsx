@@ -1,7 +1,6 @@
 'use client';
 
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { useSupabaseClient } from '@/hooks/useSupabase';
 import {
   getTransactionById,
   updateTransaction,
@@ -17,7 +16,6 @@ import Link from 'next/link';
 export default function TransactionDetailPage(): React.ReactElement {
   const router = useRouter();
   const params = useParams();
-  const client = useSupabaseClient();
   const id = params.id as string;
 
   const [transaction, setTransaction] = useState<TransactionWithRelations | null>(null);
@@ -60,7 +58,7 @@ export default function TransactionDetailPage(): React.ReactElement {
     };
 
     loadTransaction();
-  }, [id, client, router]);
+  }, [id, router]);
 
   const handleSave = async () => {
     if (!transaction) return;
@@ -189,7 +187,7 @@ export default function TransactionDetailPage(): React.ReactElement {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      amount: parseFloat(e.target.value),
+                      amount: isNaN(parseFloat(e.target.value)) ? 0 : parseFloat(e.target.value),
                     })
                   }
                   className="w-full px-4 py-2 rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-100 focus:outline-none focus:border-emerald-500/50"

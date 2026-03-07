@@ -7,7 +7,6 @@
 
 import { createBrowserClient } from './client';
 import { createServerClient } from './server';
-import type { Tables } from './database.types';
 import type {
   Transaction,
   Contact,
@@ -15,6 +14,14 @@ import type {
   BotSession,
   TransactionFilters,
 } from '../../types';
+
+/**
+ * Sanitize user input for PostgREST filter strings
+ * Escapes characters that could manipulate .or() filter syntax
+ */
+function sanitizeFilterValue(input: string): string {
+  return input.replace(/[,.()"'\\{}]/g, '');
+}
 
 // ============================================================
 // TRANSACTION QUERIES
@@ -49,8 +56,9 @@ export async function getTransactions(
   }
 
   if (filters.search_query) {
+    const q = sanitizeFilterValue(filters.search_query);
     query = query.or(
-      `person_name.ilike.%${filters.search_query}%,purpose.ilike.%${filters.search_query}%,notes.ilike.%${filters.search_query}%`
+      `person_name.ilike.%${q}%,purpose.ilike.%${q}%,notes.ilike.%${q}%`
     );
   }
 
@@ -145,11 +153,21 @@ export async function insertTransaction(
  */
 export async function updateTransaction(
   id: string,
-  data: Tables['transactions']['Update']
+  data: Partial<{
+    amount: number;
+    person_name: string;
+    category: string;
+    payment_mode: 'cash' | 'upi' | 'bank_transfer' | 'cheque' | 'other' | null;
+    txn_id: string | null;
+    txn_date: string | null;
+    notes: string | null;
+    is_edited: boolean;
+    is_deleted: boolean;
+  }>
 ): Promise<Transaction> {
   const supabase = createBrowserClient();
 
-  const { data: updated, error } = await supabase
+  const { data: updated, error } = await (supabase as any)
     .from('transactions')
     .update(data)
     .eq('id', id)
@@ -195,7 +213,7 @@ export async function getGroups(isActive?: boolean): Promise<Group[]> {
  * Used by bot message listener to find group context
  */
 export async function getGroupByChatId(wa_group_jid: string): Promise<Group | null> {
-  const supabase = createBrowserClient();
+  const supabase = createServerClient();
 
   const { data, error } = await supabase
     .from('groups')
@@ -226,8 +244,9 @@ export async function getContacts(search?: string): Promise<Contact[]> {
   let query = supabase.from('contacts').select('*');
 
   if (search) {
+    const q = sanitizeFilterValue(search);
     query = query.or(
-      `name.ilike.%${search}%,aliases.cs.{${search}},phone.ilike.%${search}%`
+      `name.ilike.%${q}%,phone.ilike.%${q}%`
     );
   }
 
@@ -327,8 +346,8 @@ export async function upsertBotSession(data: {
  * Check if a WhatsApp message ID already exists in transactions
  * Prevents duplicate transaction entries from re-processed messages
  */
-export async function checkDuplicate(wa_message_id: string): Promise<boolean> {
-  const supabase = createBrowserClient();
+export async function checkDuplicateByMessageId(wa_message_id: string): Promise<boolean> {
+  const supabase = createServerClient();
 
   const { data, error } = await supabase
     .from('transactions')
@@ -348,7 +367,7 @@ export async function checkDuplicate(wa_message_id: string): Promise<boolean> {
  * Some payment receipts include transaction IDs that should be unique
  */
 export async function checkDuplicateTxnId(txn_id: string): Promise<boolean> {
-  const supabase = createBrowserClient();
+  const supabase = createServerClient();
 
   const { data, error } = await supabase
     .from('transactions')

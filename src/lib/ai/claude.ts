@@ -14,7 +14,7 @@ const ResponseSchema = z.object({
   amount: z.number().nullable(),
   person: z.string().nullable(),
   purpose: z.string().nullable(),
-  payment_mode: z.enum(['cash', 'upi', 'bank_transfer', 'cheque']).nullable(),
+  payment_mode: z.enum(['cash', 'upi', 'bank_transfer', 'cheque', 'other']).nullable(),
   txn_id: z.string().nullable(),
   date: z.string().nullable(),
   confidence: z.number().min(0).max(1),
@@ -24,6 +24,10 @@ export type ClaudeRawResponse = z.infer<typeof ResponseSchema>;
 export interface ClaudeExtractionResult extends ClaudeRawResponse {
   extracted_text?: string;
   validation_notes?: string[];
+}
+
+if (!process.env.ANTHROPIC_API_KEY) {
+  throw new Error('ANTHROPIC_API_KEY environment variable is required');
 }
 
 const client = new Anthropic({

@@ -93,6 +93,28 @@ export async function processMessage(
       };
     }
 
+    // === POST-EXTRACTION DEDUP: Time-window check with amount + person ===
+    const postExtractDedup = await checkDuplicate(
+      classifiedMessage,
+      extraction.transaction.amount,
+      extraction.transaction.person_name
+    );
+    if (postExtractDedup.isDuplicate) {
+      logger.info(
+        {
+          messageId: classifiedMessage.wa_message_id,
+          reason: postExtractDedup.reason,
+        },
+        'Message rejected: duplicate (post-extraction)'
+      );
+      return {
+        success: false,
+        isDuplicate: true,
+        error: postExtractDedup.reason,
+        stage: 'deduplication-post',
+      };
+    }
+
     // === STAGE 2: CONTACT MATCHING ===
     // Attempt fuzzy match but don't fail if no match found
     let contactMatch = null;

@@ -14,7 +14,7 @@
 
 // Location: src/services/transaction-saver.ts
 async function exampleBotSaveTransaction() {
-  const { insertTransaction, checkDuplicate } = await import('./queries');
+  const { insertTransaction, checkDuplicateByMessageId } = await import('./queries');
 
   // After Claude extraction
   const extraction = {
@@ -27,7 +27,7 @@ async function exampleBotSaveTransaction() {
   };
 
   // Check if already saved
-  const isDuplicate = await checkDuplicate('wa_msg_abc123');
+  const isDuplicate = await checkDuplicateByMessageId('wa_msg_abc123');
   if (isDuplicate) {
     console.log('Message already processed');
     return;
@@ -300,11 +300,11 @@ async function exampleApiCreateTransaction(payload: {
   person_name: string;
   category: string;
 }) {
-  const { insertTransaction, checkDuplicate } = await import('./queries');
+  const { insertTransaction, checkDuplicateByMessageId } = await import('./queries');
 
   // Optional dedup check
   if (payload.person_name === 'Duplicate') {
-    const isDup = await checkDuplicate('api_txn_123');
+    const isDup = await checkDuplicateByMessageId('api_txn_123');
     if (isDup) {
       return { error: 'Already exists' };
     }

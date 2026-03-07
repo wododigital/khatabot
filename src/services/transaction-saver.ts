@@ -7,7 +7,7 @@
 import { createServerClient } from '@/lib/supabase/server.js';
 import pino from 'pino';
 import type { Transaction, EnrichedExtraction } from '@/types/index.js';
-import { matchContact } from './contact-matcher.js';
+// Contact matching is done upstream in message-flow.ts
 
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
@@ -80,26 +80,8 @@ export async function saveTransaction(
 
     const { transaction: txn, confidence } = enrichedExtraction;
 
-    // Attempt contact matching
-    let contactId: string | undefined;
-    let matchConfidence = 0;
-
-    try {
-      const match = await matchContact(txn.person_name, 0.8);
-      if (match) {
-        contactId = match.contactId;
-        matchConfidence = match.confidence;
-        logger.debug(
-          { personName: txn.person_name, contactId },
-          'Contact matched'
-        );
-      }
-    } catch (matchError) {
-      // Log but don't fail - transaction can be saved without contact
-      const err =
-        matchError instanceof Error ? matchError.message : String(matchError);
-      logger.warn({ error: err }, 'Contact matching failed, continuing');
-    }
+    // Use contact already matched upstream in message-flow.ts
+    const contactId = enrichedExtraction.matched_contact?.id;
 
     // Parse txn_date if provided
     let txnDate: string | null = null;
