@@ -72,7 +72,7 @@ export async function parseMessage(
         amount: result.amount,
         person_name: result.person,
         purpose: result.purpose || undefined,
-        category: inferCategory(result.purpose),
+        category: inferCategory(result.purpose ?? undefined),
         payment_mode: result.payment_mode || undefined,
         txn_date: result.date || undefined,
         txn_id: result.txn_id || undefined,

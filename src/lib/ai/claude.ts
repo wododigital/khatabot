@@ -26,14 +26,20 @@ export interface ClaudeExtractionResult extends ClaudeRawResponse {
   validation_notes?: string[];
 }
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  throw new Error('ANTHROPIC_API_KEY environment variable is required');
-}
+let _client: Anthropic | null = null;
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  timeout: 30000,
-});
+function getClient(): Anthropic {
+  if (!_client) {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY environment variable is required');
+    }
+    _client = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      timeout: 30000,
+    });
+  }
+  return _client;
+}
 
 function parseJsonResponse(responseText: string): unknown {
   let json = responseText.trim();
@@ -52,7 +58,7 @@ export async function extractTransactionFromText(
   logger.debug({ length: sanitized.length }, 'Text extraction starting');
 
   try {
-    const response = await client.messages.create({
+    const response = await getClient().messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,
       system: TRANSACTION_EXTRACTION_SYSTEM,
@@ -136,7 +142,7 @@ export async function extractTransactionFromImage(
           { type: 'text', text: 'Extract transaction details.' },
         ];
 
-    const response = await client.messages.create({
+    const response = await getClient().messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,
       system: TRANSACTION_EXTRACTION_SYSTEM,
@@ -168,4 +174,4 @@ export async function extractTransactionFromImage(
   }
 }
 
-export { client };
+export { getClient as client };

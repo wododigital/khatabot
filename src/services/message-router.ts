@@ -6,13 +6,13 @@
 
 import pino from 'pino';
 import type { ClassifiedMessage } from '@/types/index.js';
+import { processMessage } from './message-flow.js';
 
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
-  transport: {
-    target: 'pino-pretty',
-    options: { colorize: true, singleLine: false },
-  },
+  ...(process.env.NODE_ENV === 'development'
+    ? { transport: { target: 'pino-pretty', options: { colorize: true, singleLine: false } } }
+    : {}),
 });
 
 /**
@@ -38,7 +38,6 @@ export async function routeMessage(
       case 'image': {
         // Route to complete message processing pipeline
         // (dedup -> extract -> match -> save)
-        const { processMessage } = await import('./message-flow.js');
         const result = await processMessage(message, groupId);
 
         if (!result.success) {

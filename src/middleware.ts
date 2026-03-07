@@ -57,7 +57,9 @@ export async function middleware(req: NextRequest) {
     if (req.nextUrl.pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Auth check failed' }, { status: 500 });
     }
-    return res;
+    // On auth failure for protected pages, redirect to login instead of passing through
+    const loginUrl = new URL('/auth/login', req.url);
+    return NextResponse.redirect(loginUrl);
   }
 }
 

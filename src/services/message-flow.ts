@@ -10,7 +10,7 @@
  */
 
 import pino from 'pino';
-import type { ClassifiedMessage, EnrichedExtraction, Transaction } from '@/types/index.js';
+import type { ClassifiedMessage } from '@/types/index.js';
 import { checkDuplicate } from './dedup.js';
 import { parseMessage } from './ai-parser.js';
 import { matchContact } from './contact-matcher.js';
@@ -18,10 +18,9 @@ import { saveTransaction } from './transaction-saver.js';
 
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
-  transport: {
-    target: 'pino-pretty',
-    options: { colorize: true, singleLine: false },
-  },
+  ...(process.env.NODE_ENV === 'development'
+    ? { transport: { target: 'pino-pretty', options: { colorize: true, singleLine: false } } }
+    : {}),
 });
 
 export interface ProcessingResult {

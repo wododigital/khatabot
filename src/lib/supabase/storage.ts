@@ -52,7 +52,7 @@ export async function uploadAttachment(
   }
 
   // Return signed URL for later access
-  const signedUrl = await getSignedUrl(bucket, path, 7 * 24 * 60 * 60); // 7 days
+  const signedUrl = await getSignedUrl(bucket, path, 7 * 24 * 60 * 60, true); // 7 days, server client
   return signedUrl;
 }
 
@@ -73,9 +73,10 @@ export async function uploadAttachment(
 export async function getSignedUrl(
   bucket: string,
   path: string,
-  expiresIn: number = 7 * 24 * 60 * 60
+  expiresIn: number = 7 * 24 * 60 * 60,
+  useServerClient: boolean = false
 ): Promise<string> {
-  const supabase = createBrowserClient();
+  const supabase = useServerClient ? createServerClient() : createBrowserClient();
 
   const { data, error } = await supabase.storage
     .from(bucket)

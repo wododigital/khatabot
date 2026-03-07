@@ -13,10 +13,9 @@ import qrcode from 'qrcode';
 
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
-  transport: {
-    target: 'pino-pretty',
-    options: { colorize: true, singleLine: false },
-  },
+  ...(process.env.NODE_ENV === 'development'
+    ? { transport: { target: 'pino-pretty', options: { colorize: true, singleLine: false } } }
+    : {}),
 });
 
 let socket: ReturnType<typeof makeWASocket> | null = null;
@@ -172,13 +171,6 @@ export async function startBot(): Promise<void> {
 
     // Setup message listener
     setupMessageListener(socket);
-
-    // Handle connection events
-    socket.ev.on('connection.update', (update) => {
-      if (update.connection === 'open') {
-        logger.info('Bot ready to receive messages');
-      }
-    });
 
     logger.info({ sessionId }, 'Bot initialization complete');
   } catch (error) {
