@@ -2,7 +2,7 @@
 
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useEffect, useState, useCallback } from 'react';
-import { Wifi, WifiOff, RefreshCw, QrCode, MessageSquare, Clock, AlertCircle } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, QrCode, MessageSquare, Clock, AlertCircle, CheckCircle, XCircle, SkipForward, Copy } from 'lucide-react';
 
 interface BotStatus {
   connected: boolean;
@@ -14,12 +14,27 @@ interface BotStatus {
   timestamp: string;
 }
 
+interface MessageLog {
+  id: string;
+  group_name: string | null;
+  sender: string | null;
+  message_type: string | null;
+  text_preview: string | null;
+  status: 'saved' | 'not_transaction' | 'duplicate' | 'skipped' | 'error';
+  skip_reason: string | null;
+  amount: number | null;
+  transaction_id: string | null;
+  created_at: string;
+}
+
 export default function SettingsPage() {
   const [status, setStatus] = useState<BotStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [logs, setLogs] = useState<MessageLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     console.log('[Settings] fetchStatus called, current loading:', loading);
@@ -96,11 +111,24 @@ export default function SettingsPage() {
     }
   };
 
+  const fetchLogs = useCallback(async () => {
+    setLogsLoading(true);
+    try {
+      const res = await fetch('/api/message-logs', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setLogs(data.logs ?? []);
+      }
+    } catch {}
+    finally { setLogsLoading(false); }
+  }, []);
+
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 5000);
+    fetchLogs();
+    const interval = setInterval(() => { fetchStatus(); fetchLogs(); }, 5000);
     return () => clearInterval(interval);
-  }, [fetchStatus]);
+  }, [fetchStatus, fetchLogs]);
 
   const formatUptime = (seconds: number): string => {
     const d = Math.floor(seconds / 86400);
@@ -214,6 +242,72 @@ export default function SettingsPage() {
                 </div>
               )}
               <p className="text-slate-500 text-xs mt-3">QR code refreshes automatically every 5 seconds</p>
+            </div>
+          )}
+        </div>
+
+        {/* Message Logs */}
+        <div className="bg-slate-900/40 border border-slate-700/50 backdrop-blur-xl rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-slate-100">Message Logs</h2>
+            <button
+              onClick={fetchLogs}
+              disabled={logsLoading}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 text-slate-300 text-sm transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${logsLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </div>
+
+          {logs.length === 0 ? (
+            <p className="text-slate-500 text-sm">No messages received yet. Send a message to a monitored group to see it here.</p>
+          ) : (
+            <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+              {logs.map((log) => (
+                <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg bg-slate-800/30 border border-slate-700/30">
+                  {/* Status icon */}
+                  <div className="flex-shrink-0 mt-0.5">
+                    {log.status === 'saved' && <CheckCircle className="w-4 h-4 text-emerald-400" />}
+                    {log.status === 'not_transaction' && <XCircle className="w-4 h-4 text-slate-500" />}
+                    {log.status === 'duplicate' && <Copy className="w-4 h-4 text-amber-400" />}
+                    {log.status === 'skipped' && <SkipForward className="w-4 h-4 text-slate-600" />}
+                    {log.status === 'error' && <AlertCircle className="w-4 h-4 text-red-400" />}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
+                        log.status === 'saved' ? 'bg-emerald-500/20 text-emerald-400' :
+                        log.status === 'skipped' ? 'bg-slate-700/50 text-slate-500' :
+                        log.status === 'duplicate' ? 'bg-amber-500/20 text-amber-400' :
+                        log.status === 'error' ? 'bg-red-500/20 text-red-400' :
+                        'bg-slate-700/50 text-slate-400'
+                      }`}>
+                        {log.status === 'saved' ? `Saved ₹${log.amount}` :
+                         log.status === 'not_transaction' ? 'Not a transaction' :
+                         log.status === 'duplicate' ? 'Duplicate' :
+                         log.status === 'skipped' ? 'Skipped' : 'Error'}
+                      </span>
+                      {log.group_name && (
+                        <span className="text-xs text-slate-500 truncate max-w-[160px]">{log.group_name}</span>
+                      )}
+                      {log.sender && (
+                        <span className="text-xs text-slate-400">{log.sender}</span>
+                      )}
+                      <span className="text-xs text-slate-600 ml-auto">
+                        {new Date(log.created_at).toLocaleTimeString('en-IN')}
+                      </span>
+                    </div>
+                    {log.text_preview && (
+                      <p className="text-sm text-slate-300 mt-1 truncate">{log.text_preview}</p>
+                    )}
+                    {log.skip_reason && (
+                      <p className="text-xs text-slate-600 mt-0.5">{log.skip_reason}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
