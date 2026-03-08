@@ -41,12 +41,20 @@ export default function SettingsPage() {
         fetchQR();
       } else {
         console.log('[Settings] QR not pending, clearing QR URL');
-        setQrUrl(null);
+        setQrUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return null;
+        });
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to connect';
       console.error('[Settings] fetchStatus error:', msg);
       setError(msg);
+      // Clear QR on error too
+      setQrUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
     } finally {
       setLoading(false);
       console.log('[Settings] fetchStatus done, loading set to false');
@@ -57,22 +65,31 @@ export default function SettingsPage() {
     console.log('[Settings] fetchQR called');
     setQrLoading(true);
     try {
-      const res = await fetch('/api/qr', { cache: 'no-store' });
+      const res = await fetch(`/api/qr?t=${Date.now()}`, { cache: 'no-store' });
       const contentType = res.headers.get('Content-Type');
       console.log('[Settings] QR response status:', res.status, 'content-type:', contentType);
       if (contentType?.includes('image/png')) {
         const blob = await res.blob();
         console.log('[Settings] QR blob size:', blob.size);
-        const url = URL.createObjectURL(blob);
-        setQrUrl(url);
+        // Revoke old URL to prevent memory leak
+        setQrUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(blob);
+        });
       } else {
         const body = await res.text();
         console.log('[Settings] QR response (not PNG):', body);
-        setQrUrl(null);
+        setQrUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return null;
+        });
       }
     } catch (err) {
       console.error('[Settings] fetchQR error:', err);
-      setQrUrl(null);
+      setQrUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
     } finally {
       setQrLoading(false);
       console.log('[Settings] fetchQR done');
