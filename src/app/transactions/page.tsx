@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { getTransactions, getGroups } from '@/lib/supabase/queries';
 import type { Transaction, Group, TransactionFilters } from '@/types';
 import Link from 'next/link';
-import { Search, Download, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Download, Filter, X, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 
 const PAGE_SIZE = 50;
 
@@ -29,6 +29,7 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,6 +92,21 @@ export default function TransactionsPage() {
   };
 
   const hasFilters = searchQuery || filterCategory || filterPaymentMode || filterGroupId || filterDateFrom || filterDateTo;
+
+  const handleDelete = async (id: string, personName: string) => {
+    if (!confirm(`Delete transaction for "${personName}"? This cannot be undone.`)) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setTransactions((prev) => prev.filter((t) => t.id !== id));
+      }
+    } catch (err) {
+      console.error('Delete failed:', err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const exportCSV = () => {
     const headers = ['Date', 'Person', 'Amount', 'Purpose', 'Category', 'Payment Mode', 'Txn ID', 'Notes'];
@@ -257,7 +273,7 @@ export default function TransactionsPage() {
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 hidden lg:table-cell">Category</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 hidden lg:table-cell">Mode</th>
                     <th className="px-4 py-3 text-right text-sm font-semibold text-slate-300">Amount</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-300 w-16"></th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-300 w-24"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700/50">
@@ -285,12 +301,22 @@ export default function TransactionsPage() {
                         ₹{txn.amount.toLocaleString('en-IN')}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <Link
-                          href={`/transactions/${txn.id}`}
-                          className="text-blue-400 hover:text-blue-300 text-sm transition-colors"
-                        >
-                          View
-                        </Link>
+                        <div className="flex items-center justify-center gap-2">
+                          <Link
+                            href={`/transactions/${txn.id}`}
+                            className="text-blue-400 hover:text-blue-300 text-sm transition-colors"
+                          >
+                            View
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(txn.id, txn.person_name)}
+                            disabled={deletingId === txn.id}
+                            className="p-1 rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

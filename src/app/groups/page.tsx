@@ -1,10 +1,10 @@
 'use client';
 
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { getGroups, updateGroup, insertGroup, deleteGroup } from '@/lib/supabase/queries';
 import type { Group } from '@/types';
-import { Plus, Trash2, MessageSquare, Eye, EyeOff, X } from 'lucide-react';
+import { Plus, Trash2, MessageSquare, Eye, EyeOff, X, Search } from 'lucide-react';
 
 const CATEGORY_OPTIONS = [
   { value: 'home', label: 'Home', color: 'bg-blue-500/20 text-blue-400 border-blue-500/50' },
@@ -26,6 +26,8 @@ export default function GroupsPage() {
   const [newCategory, setNewCategory] = useState<string>('custom');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showMonitoringOnly, setShowMonitoringOnly] = useState(false);
 
   const loadGroups = async () => {
     try {
@@ -104,24 +106,56 @@ export default function GroupsPage() {
 
   const activeCount = groups.filter((g) => g.is_active).length;
 
+  const filteredGroups = useMemo(() => {
+    return groups.filter((g) => {
+      if (showMonitoringOnly && !g.is_active) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return g.name.toLowerCase().includes(q) || g.wa_group_jid.toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [groups, searchQuery, showMonitoringOnly]);
+
   return (
     <DashboardLayout title="Groups">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-slate-400 text-sm">
-              {groups.length} groups found, {activeCount} monitored
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search groups by name or JID..."
+              className="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-900/40 border border-slate-700/50 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50"
+            />
           </div>
-          <button
-            onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/50 hover:bg-emerald-500/30 text-emerald-400 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Group
-          </button>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <button
+              onClick={() => setShowMonitoringOnly((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                showMonitoringOnly
+                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
+                  : 'bg-slate-900/40 border-slate-700/50 text-slate-400 hover:bg-slate-800'
+              }`}
+            >
+              <Eye className="w-4 h-4" />
+              Monitoring only
+            </button>
+            <button
+              onClick={() => setShowAdd(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/50 hover:bg-emerald-500/30 text-emerald-400 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Group
+            </button>
+          </div>
         </div>
+        <p className="text-slate-400 text-sm -mt-2">
+          {filteredGroups.length} of {groups.length} groups{showMonitoringOnly ? ' (monitoring only)' : ''}, {activeCount} monitored
+        </p>
 
         {/* Info Banner */}
         <div className="bg-slate-900/40 border border-slate-700/50 backdrop-blur-xl rounded-lg p-4">
@@ -204,8 +238,12 @@ export default function GroupsPage() {
               <p className="text-slate-400 mb-2">No groups yet</p>
               <p className="text-slate-500 text-sm">Start the bot to auto-discover your WhatsApp groups, or add one manually.</p>
             </div>
+          ) : filteredGroups.length === 0 ? (
+            <div className="bg-slate-900/40 border border-slate-700/50 backdrop-blur-xl rounded-lg p-8 text-center">
+              <p className="text-slate-400">No groups match your search.</p>
+            </div>
           ) : (
-            groups.map((group) => (
+            filteredGroups.map((group) => (
               <div
                 key={group.id}
                 className={`bg-slate-900/40 border backdrop-blur-xl rounded-lg p-4 flex items-center justify-between gap-4 transition-colors ${

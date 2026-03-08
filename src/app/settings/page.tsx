@@ -2,7 +2,7 @@
 
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useEffect, useState, useCallback } from 'react';
-import { Wifi, WifiOff, RefreshCw, QrCode, MessageSquare, Clock, AlertCircle, CheckCircle, XCircle, SkipForward, Copy } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, QrCode, MessageSquare, Clock, AlertCircle, CheckCircle, XCircle, SkipForward, Copy, RotateCcw } from 'lucide-react';
 
 interface BotStatus {
   connected: boolean;
@@ -35,6 +35,7 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [logs, setLogs] = useState<MessageLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     console.log('[Settings] fetchStatus called, current loading:', loading);
@@ -123,6 +124,16 @@ export default function SettingsPage() {
     finally { setLogsLoading(false); }
   }, []);
 
+  const handleReconnect = async () => {
+    if (!confirm('This will clear the bot session. After clicking OK, restart the bot service on Railway to generate a new QR code.')) return;
+    setReconnecting(true);
+    try {
+      await fetch('/api/reconnect', { method: 'POST' });
+      await fetchStatus();
+    } catch {}
+    finally { setReconnecting(false); }
+  };
+
   useEffect(() => {
     fetchStatus();
     fetchLogs();
@@ -171,7 +182,7 @@ export default function SettingsPage() {
           )}
 
           {/* Status Indicator */}
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-3 mb-6 flex-wrap">
             {status?.connected ? (
               <>
                 <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
@@ -189,6 +200,14 @@ export default function SettingsPage() {
                 <div className="w-3 h-3 rounded-full bg-red-500" />
                 <WifiOff className="w-5 h-5 text-red-400" />
                 <span className="text-red-400 font-medium">Disconnected</span>
+                <button
+                  onClick={handleReconnect}
+                  disabled={reconnecting}
+                  className="ml-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 text-sm transition-colors disabled:opacity-50"
+                >
+                  <RotateCcw className={`w-3.5 h-3.5 ${reconnecting ? 'animate-spin' : ''}`} />
+                  {reconnecting ? 'Clearing...' : 'Reset & Reconnect'}
+                </button>
               </>
             )}
           </div>
