@@ -52,7 +52,7 @@ export async function GET(): Promise<Response> {
 
       console.log('[QR] PNG buffer size:', pngBuffer.length, 'first bytes:', pngBuffer.slice(0, 4).toString('hex'));
 
-      return new Response(pngBuffer, {
+      return new Response(new Uint8Array(pngBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'image/png',
