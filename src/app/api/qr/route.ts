@@ -27,10 +27,30 @@ export async function GET(): Promise<Response> {
     }
 
     if (session?.qr_code_png && session.qr_pending === true) {
-      const pngBuffer =
-        session.qr_code_png instanceof Buffer
-          ? session.qr_code_png
-          : Buffer.from(session.qr_code_png, 'base64');
+      let pngBuffer: Buffer;
+      const raw = session.qr_code_png;
+      console.log('[QR] qr_code_png type:', typeof raw, 'length:', raw?.length, 'starts with:', String(raw).substring(0, 20));
+
+      if (raw instanceof Buffer || raw instanceof Uint8Array) {
+        // Already binary
+        pngBuffer = Buffer.from(raw);
+      } else if (typeof raw === 'string' && raw.startsWith('\\x')) {
+        // Supabase bytea hex format: \x6956424f... -> decode hex to get the base64 string, then decode base64
+        const hexStr = raw.slice(2);
+        const base64Str = Buffer.from(hexStr, 'hex').toString('utf-8');
+        pngBuffer = Buffer.from(base64Str, 'base64');
+      } else if (typeof raw === 'string' && raw.startsWith('iVBOR')) {
+        // Plain base64 PNG string
+        pngBuffer = Buffer.from(raw, 'base64');
+      } else if (typeof raw === 'string') {
+        // Try base64 decode as fallback
+        pngBuffer = Buffer.from(raw, 'base64');
+      } else {
+        console.error('[QR] Unexpected qr_code_png format:', typeof raw);
+        return Response.json({ status: 'error', message: 'Invalid QR data format' }, { status: 500 });
+      }
+
+      console.log('[QR] PNG buffer size:', pngBuffer.length, 'first bytes:', pngBuffer.slice(0, 4).toString('hex'));
 
       return new Response(pngBuffer, {
         status: 200,
