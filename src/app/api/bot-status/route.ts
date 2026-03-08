@@ -46,8 +46,9 @@ export async function GET(): Promise<Response> {
 
     const uptimeSeconds = Math.floor((Date.now() - new Date(session.created_at).getTime()) / 1000);
     const qrPending = session.qr_pending === true;
-    const registered = session.creds?.registered === true;
-    const connected = registered && !qrPending;
+    // creds.registered stays false even after pairing; creds.me.id is the reliable indicator
+    const paired = !!session.creds?.me?.id;
+    const connected = paired && !qrPending;
 
     return Response.json(
       {
