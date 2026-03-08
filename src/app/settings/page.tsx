@@ -22,41 +22,60 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchStatus = useCallback(async () => {
+    console.log('[Settings] fetchStatus called, current loading:', loading);
+    setLoading(true);
     try {
-      const res = await fetch('/api/bot-status', { cache: 'no-store' });
-      if (!res.ok) throw new Error('Failed to fetch bot status');
+      const url = '/api/bot-status';
+      console.log('[Settings] Fetching:', url);
+      const res = await fetch(url, { cache: 'no-store' });
+      console.log('[Settings] Response status:', res.status, 'ok:', res.ok);
+      if (!res.ok) throw new Error(`Failed to fetch bot status: ${res.status}`);
       const data: BotStatus = await res.json();
+      console.log('[Settings] Bot status data:', JSON.stringify(data));
       setStatus(data);
       setError(null);
 
       // If QR is pending, fetch QR image
       if (data.qrPending) {
+        console.log('[Settings] QR pending, fetching QR image...');
         fetchQR();
       } else {
+        console.log('[Settings] QR not pending, clearing QR URL');
         setQrUrl(null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect');
+      const msg = err instanceof Error ? err.message : 'Failed to connect';
+      console.error('[Settings] fetchStatus error:', msg);
+      setError(msg);
     } finally {
       setLoading(false);
+      console.log('[Settings] fetchStatus done, loading set to false');
     }
   }, []);
 
   const fetchQR = async () => {
+    console.log('[Settings] fetchQR called');
     setQrLoading(true);
     try {
       const res = await fetch('/api/qr', { cache: 'no-store' });
-      if (res.headers.get('Content-Type')?.includes('image/png')) {
+      const contentType = res.headers.get('Content-Type');
+      console.log('[Settings] QR response status:', res.status, 'content-type:', contentType);
+      if (contentType?.includes('image/png')) {
         const blob = await res.blob();
+        console.log('[Settings] QR blob size:', blob.size);
         const url = URL.createObjectURL(blob);
         setQrUrl(url);
       } else {
+        const body = await res.text();
+        console.log('[Settings] QR response (not PNG):', body);
         setQrUrl(null);
       }
-    } catch {
+    } catch (err) {
+      console.error('[Settings] fetchQR error:', err);
       setQrUrl(null);
     } finally {
       setQrLoading(false);
+      console.log('[Settings] fetchQR done');
     }
   };
 
@@ -90,7 +109,7 @@ export default function SettingsPage() {
               WhatsApp Bot
             </h2>
             <button
-              onClick={fetchStatus}
+              onClick={() => { console.log('[Settings] Refresh button clicked'); fetchStatus(); }}
               disabled={loading}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 text-slate-300 text-sm transition-colors disabled:opacity-50"
             >
