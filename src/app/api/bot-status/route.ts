@@ -25,7 +25,7 @@ export async function GET(): Promise<Response> {
 
     const { data: session, error } = await db
       .from('bot_sessions')
-      .select('created_at, updated_at, last_message_at, messages_processed, qr_pending, creds')
+      .select('created_at, updated_at, last_message_at, messages_processed, qr_pending, creds, last_heartbeat')
       .eq('session_id', sessionId)
       .single();
 
@@ -46,9 +46,11 @@ export async function GET(): Promise<Response> {
 
     const uptimeSeconds = Math.floor((Date.now() - new Date(session.created_at).getTime()) / 1000);
     const qrPending = session.qr_pending === true;
-    // creds.registered stays false even after pairing; creds.me.id is the reliable indicator
+    // Bot is live only if heartbeat was received within the last 60 seconds
+    const lastHeartbeat = session.last_heartbeat ? new Date(session.last_heartbeat).getTime() : 0;
+    const heartbeatFresh = Date.now() - lastHeartbeat < 60_000;
     const paired = !!session.creds?.me?.id;
-    const connected = paired && !qrPending;
+    const connected = paired && heartbeatFresh && !qrPending;
 
     return Response.json(
       {
